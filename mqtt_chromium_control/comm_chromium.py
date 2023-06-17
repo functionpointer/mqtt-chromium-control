@@ -38,7 +38,7 @@ class CommChromium:
 
     def take_picture(self, new_size: tuple[int, int] = (400, 240)) -> io.BytesIO:
         self.logger.debug("capturing screenshot...")
-        img = self.tab.call_method("Page.captureScreenshot", format="jpeg")
+        img = self.tab.call_method("Page.captureScreenshot", format="jpeg", _timeout=20)
         img_bytes = base64.b64decode(img["data"])
         with io.BytesIO(img_bytes) as f:
             pil_img = Image.open(f)
@@ -52,6 +52,6 @@ class CommChromium:
             self.logger.info(f"navigate to empty page...")
             self.tab.call_method("Page.navigate", url="about:blank", _timeout=1)
             self.logger.info(f"delay...")
-            self.tab.wait(1)
+            self.tab.wait(3)
         self.logger.info(f"navigate to {tgt_url}")
-        self.tab.call_method("Page.navigate", url=tgt_url, _timeout=5)
+        self.tab.call_method("Page.navigate", url=tgt_url, _timeout=10)

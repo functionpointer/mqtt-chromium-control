@@ -16,7 +16,7 @@ class CommMqtt:
         name: str,
         reload_cb: Callable[[], Awaitable[None]],
     ):
-        self.logger = logging.getLogger("mqtt")
+        self.logger = logging.getLogger("comm_mqtt")
         if topic_prefix[-1] == "/":
             raise ValueError("topic_prefix can't have trailing slash")
         self.topic_prefix = topic_prefix
@@ -24,7 +24,11 @@ class CommMqtt:
         self.reload_cb = reload_cb
 
         self.url = yarl.URL(mqtt_url)
+        if self.url.scheme != "mqtt":
+            raise ValueError("mqtt url must start with mqtt://")
         self.client: aiomqtt.Client | None = None
+
+        self.go_offline_task = None
 
     @property
     def availability_topic(self) -> str:
@@ -51,7 +55,7 @@ class CommMqtt:
 
     async def _publish_auto_discovery(self, client: aiomqtt.Client):
         await client.publish(
-            topic=f"homeassistant/camera/{self.name}/screenshot",
+            topic=f"homeassistant/camera/{self.name}/screenshot/config",
             payload=json.dumps(
                 {
                     "name": self.name + " screenshot",
@@ -64,7 +68,7 @@ class CommMqtt:
             retain=True,
         )
         await client.publish(
-            topic=f"homeassistant/sensor/{self.name}/screenshot_size",
+            topic=f"homeassistant/sensor/{self.name}/screenshot_size/config",
             payload=json.dumps(
                 {
                     "name": self.name + " screenshot size",
@@ -81,7 +85,7 @@ class CommMqtt:
             retain=True,
         )
         await client.publish(
-            topic=f"homeassistant/button/{self.name}/reload",
+            topic=f"homeassistant/button/{self.name}/reload/config",
             payload=json.dumps(
                 {
                     "name": self.name + " reload",
@@ -94,13 +98,27 @@ class CommMqtt:
             retain=True,
         )
 
+    async def _go_offline(self, sleeptime=60) -> None:
+        await asyncio.sleep(sleeptime)
+        if self.client is not None:
+            self.logger.warning("going offline")
+            await self.client.publish(topic=self.availability_topic, payload="offline")
+
+    async def _heartbeat(self) -> None:
+        if self.go_offline_task:
+            self.go_offline_task.cancel()
+        self.go_offline_task = asyncio.create_task(self._go_offline())
+        await self.client.publish(topic=self.availability_topic, payload="online")
+
     async def run_mqtt_until_fail(self) -> None:
+        self.logger.debug(f"connecting to {self.url.host} port {self.url.port or 1883}")
         async with aiomqtt.Client(
             hostname=self.url.host,
             port=self.url.port or 1883,
             will=aiomqtt.Will(topic=self.availability_topic, payload="offline"),
         ) as client:
             self.client = client
+            self.go_offline_task = asyncio.create_task(self._go_offline(5))
             # publish auto-discovery
             await self._publish_auto_discovery(client)
             self.logger.info("connected")
@@ -118,17 +136,26 @@ class CommMqtt:
             try:
                 await self.run_mqtt_until_fail()
             except aiomqtt.MqttError as e:
-                self.logger.error("mqtt error: %s, reconnecting in 15s")
+                self.logger.error("mqtt error: %s, reconnecting in 15s", e)
+                if self.go_offline_task:
+                    self.go_offline_task.cancel()
                 await asyncio.sleep(15)
 
     async def publish_image(self, img: io.BytesIO) -> None:
         async with asyncio.timeout(25):
             while self.client is None:
-                await asyncio.sleep(0.5)
+                self.logger.debug("publish_image: waiting for client")
+                await asyncio.sleep(1)
         assert self.client is not None
-
+        self.logger.debug("publish_image: starting to publish...")
+        img.seek(0)
         imagebytes = img.read()
-        async with asyncio.TaskGroup():
-            self.client.publish(topic=self.camera_topic, payload=imagebytes)
-            self.client.publish(topic=self.size_topic, payload=len(imagebytes))
-        self.logger.debug("image published")
+        async with asyncio.TaskGroup() as tg:
+            tg.create_task(
+                self.client.publish(topic=self.camera_topic, payload=imagebytes)
+            )
+            tg.create_task(
+                self.client.publish(topic=self.size_topic, payload=len(imagebytes))
+            )
+            tg.create_task(self._heartbeat())
+        self.logger.info(f"image with {len(imagebytes)} bytes published")
