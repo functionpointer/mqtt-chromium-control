@@ -1,0 +1,4 @@
+Pillow
+cc12703-pychrome
+asyncio-mqtt
+yarl
