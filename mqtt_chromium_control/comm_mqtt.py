@@ -98,7 +98,7 @@ class CommMqtt:
             retain=True,
         )
 
-    async def _go_offline(self, sleeptime=120) -> None:
+    async def _go_offline(self, sleeptime=80) -> None:
         await asyncio.sleep(sleeptime)
         if self.client is not None:
             self.logger.warning("going offline")
