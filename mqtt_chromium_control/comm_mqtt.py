@@ -98,7 +98,7 @@ class CommMqtt:
             retain=True,
         )
 
-    async def _go_offline(self, sleeptime=60) -> None:
+    async def _go_offline(self, sleeptime=120) -> None:
         await asyncio.sleep(sleeptime)
         if self.client is not None:
             self.logger.warning("going offline")
@@ -122,14 +122,22 @@ class CommMqtt:
             # publish auto-discovery
             await self._publish_auto_discovery(client)
             self.logger.info("connected")
-            async with client.messages() as messages:
-                await client.subscribe(self.reload_topic)
-                async for _ in messages:
-                    self.logger.info("received reload command")
-                    try:
-                        await self.reload_cb()
-                    except Exception:
-                        self.logger.exception("reloading failed")
+            try:
+                async with client.messages() as messages:
+                    await client.subscribe(self.reload_topic)
+                    async for _ in messages:
+                        self.logger.info("received reload command")
+                        try:
+                            await self.reload_cb()
+                        except Exception:
+                            self.logger.exception("reloading failed")
+            except asyncio.CancelledError as e:
+                self.logger.error("cancel received, sending offline")
+                await self.client.publish(
+                    topic=self.availability_topic, payload="offline"
+                )
+                self.logger.debug("offline sent")
+                raise e
 
     async def run(self):
         while True:

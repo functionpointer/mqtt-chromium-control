@@ -4,6 +4,10 @@ import asyncio
 import logging
 import os
 import sys
+
+import requests.exceptions
+import urllib3.exceptions
+
 from .comm_chromium import CommChromium
 from .comm_mqtt import CommMqtt
 import asyncio_mqtt as aiomqtt
@@ -84,10 +88,14 @@ if __name__ == "__main__":
                         logging.warning(f"failed to get image: {e}")
                     except (asyncio.TimeoutError, aiomqtt.MqttError) as e:
                         logging.warning(f"failed to publish image: {e}")
-                    await asyncio.sleep(30)
-            except pychrome.PyChromeException:
-                logging.exception(msg="pychrome error, reconnecting in 15s")
-                await asyncio.sleep(15)
+                    await asyncio.sleep(60)
+            except (
+                requests.exceptions.ConnectionError,
+                urllib3.exceptions.MaxRetryError,
+                pychrome.PyChromeException,
+            ):
+                logging.info(msg="ConnectionError, reconnecting in 60s", exc_info=False)
+                await asyncio.sleep(60)
 
     async def run():
         mqtt_task = asyncio.create_task(mqtt.run())
