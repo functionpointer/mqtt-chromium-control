@@ -1,0 +1,16 @@
+[Unit]
+Description=MQTT Chromium Control
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/pi/git/mqtt-chromium-control
+ExecStart=/home/pi/git/mqtt-chromium-control/venv/bin/python -m mqtt_chromium_control
+Restart=always
+RestartSec=30
+StartLimitInterval=200
+StartLimitBurst=4
+User=pi
+
+[Install]
+WantedBy=multi-user.target
