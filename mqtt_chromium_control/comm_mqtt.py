@@ -75,7 +75,7 @@ class CommMqtt:
                     "unique_id": self.name + "_screenshot_size",
                     "device_class": "data_size",
                     "state_class": "measurement",
-                    "unit_of_measurement": "bytes",
+                    "unit_of_measurement": "B",
                     "force_update": True,
                     "state_topic": self.size_topic,
                     "availability_topic": self.availability_topic,
