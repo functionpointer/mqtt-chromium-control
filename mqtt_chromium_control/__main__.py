@@ -46,7 +46,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--tgt-url",
         dest="tgt_url",
-        default="http://[::1]:8123",
+        default="http://127.0.0.1:8123",
         help="target url the browser should have open",
     )
     args = parser.parse_args()
