@@ -13,6 +13,7 @@ Installation
 git clone https://github.com/functionpointer/mqtt-chromium-control.git
 cd mqtt-chromium-control
 python -m venv venv
+source venv/bin/activate
 pip install -r requirements.txt
 ```
 
@@ -28,6 +29,7 @@ More complete example:
 2.
 
 ```
+source venv/bin/activate
 python -m mqtt_chromium_control
 ```
 
