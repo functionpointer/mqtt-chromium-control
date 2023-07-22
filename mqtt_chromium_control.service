@@ -5,7 +5,7 @@ After=network.target
 [Service]
 Type=simple
 WorkingDirectory=/home/pi/git/mqtt-chromium-control
-ExecStart=/home/pi/git/mqtt-chromium-control/venv/bin/python -m mqtt_chromium_control --chromium http://127.0.0.123:8123/dashboard-kiosk/0
+ExecStart=/home/pi/git/mqtt-chromium-control/venv/bin/python -m mqtt_chromium_control --tgt-url http://127.0.0.123:8123/dashboard-kiosk/0
 Restart=always
 RestartSec=30
 StartLimitInterval=200
