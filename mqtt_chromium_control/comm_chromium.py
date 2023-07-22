@@ -27,7 +27,7 @@ class CommChromium:
 
     def connect(self):
         self.logger.debug(f"connecting...")
-        self.browser = pychrome.Browser(url="http://127.0.0.1:9222")
+        self.browser = pychrome.Browser(url=self.url)
         self.logger.debug("starting tab...")
         tabs = self.browser.list_tab()
         if len(tabs) < 1:
