@@ -58,7 +58,7 @@ class CommMqtt:
             topic=f"homeassistant/camera/{self.name}/screenshot/config",
             payload=json.dumps(
                 {
-                    "name": self.name + " screenshot",
+                    "name": "screenshot",
                     "unique_id": self.name + "_screenshot",
                     "topic": self.camera_topic,
                     "availability_topic": self.availability_topic,
@@ -71,7 +71,7 @@ class CommMqtt:
             topic=f"homeassistant/sensor/{self.name}/screenshot_size/config",
             payload=json.dumps(
                 {
-                    "name": self.name + " screenshot size",
+                    "name": "screenshot size",
                     "unique_id": self.name + "_screenshot_size",
                     "device_class": "data_size",
                     "state_class": "measurement",
@@ -88,7 +88,7 @@ class CommMqtt:
             topic=f"homeassistant/button/{self.name}/reload/config",
             payload=json.dumps(
                 {
-                    "name": self.name + " reload",
+                    "name": "reload",
                     "unique_id": self.name + "_reload",
                     "command_topic": self.reload_topic,
                     "availability_topic": self.availability_topic,
