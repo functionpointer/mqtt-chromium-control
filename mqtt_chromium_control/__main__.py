@@ -10,7 +10,7 @@ import urllib3.exceptions
 
 from .comm_chromium import CommChromium
 from .comm_mqtt import CommMqtt
-import asyncio_mqtt as aiomqtt
+import aiomqtt
 import pychrome
 
 if __name__ == "__main__":

@@ -2,7 +2,7 @@ import asyncio
 import io
 import logging
 
-import asyncio_mqtt as aiomqtt
+import aiomqtt
 import yarl
 import json
 from typing import Callable, Awaitable
@@ -123,14 +123,13 @@ class CommMqtt:
             await self._publish_auto_discovery(client)
             self.logger.info("connected")
             try:
-                async with client.messages() as messages:
-                    await client.subscribe(self.reload_topic)
-                    async for _ in messages:
-                        self.logger.info("received reload command")
-                        try:
-                            await self.reload_cb()
-                        except Exception:
-                            self.logger.exception("reloading failed")
+                await client.subscribe(self.reload_topic)
+                async for _ in client.messages:
+                    self.logger.info("received reload command")
+                    try:
+                        await self.reload_cb()
+                    except Exception:
+                        self.logger.exception("reloading failed")
             except asyncio.CancelledError as e:
                 self.logger.error("cancel received, sending offline")
                 await self.client.publish(

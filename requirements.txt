@@ -1,4 +1,4 @@
 Pillow
 cc12703-pychrome
-asyncio-mqtt
+aiomqtt>=2.5.0
 yarl
